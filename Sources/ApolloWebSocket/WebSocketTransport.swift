@@ -98,6 +98,10 @@ public class WebSocketTransport {
     return websocket.write(ping: data, completion: completionHandler)
   }
 
+  public func pong(data: Data, completionHandler: (() -> Void)? = nil) {
+    return websocket.write(pong: data, completion: completionHandler)
+  }
+
   private func processMessage(socket: WebSocketClient, text: String) {
     OperationMessage(serialized: text).parse { parseHandler in
       guard
