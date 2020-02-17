@@ -26,7 +26,7 @@ public class WebSocketTransport {
   public weak var delegate: WebSocketTransportDelegate?
 
   let reconnect: Atomic<Bool> = Atomic(false)
-  var websocket: ApolloWebSocketClient
+  public var websocket: ApolloWebSocketClient
   let error: Atomic<Error?> = Atomic(nil)
   let serializationFormat = JSONSerializationFormat.self
   private let requestCreator: RequestCreator
