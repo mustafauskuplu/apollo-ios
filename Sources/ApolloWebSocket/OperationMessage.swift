@@ -39,7 +39,7 @@ final class OperationMessage {
        eventType: Types = .subscribe,
        token: String? = nil) {
 
-    var mutableEventData = eventData
+    // var mutableEventData = eventData
 
     if let variables = eventData?["variables"] as? GraphQLMap {
       print("VARIABLES CAST SUCCESSFUL: \(variables)")
@@ -47,14 +47,14 @@ final class OperationMessage {
         print("INPUT CAST SUCCESSFUL: \(input)")
         if let clientSubscriptionId = input["clientSubscriptionId"] as? String {
           print("ID CAST SUCCESSFUL: \(clientSubscriptionId)")
-          mutableEventData?["id"] = clientSubscriptionId
+          //mutableEventData?["id"] = clientSubscriptionId
         }
       }
     }
     if let id = id {
       message += ["id": id]
     }
-    if let eventData = mutableEventData {
+    if let eventData = eventData {
       message += ["eventData": eventData]
     }
     if let token = token {
@@ -80,6 +80,7 @@ final class OperationMessage {
     }
 
     guard let data = self.serialized?.data(using: (.utf8) ) else {
+      print("PARSER ERROR 1")
       handler(ParseHandler(nil,
                            nil,
                            nil,
@@ -110,6 +111,7 @@ final class OperationMessage {
                            nil))
     }
     catch {
+      print("PARSER ERROR 2")
       handler(ParseHandler(id,
                            eventName,
                            token,

@@ -124,6 +124,7 @@ public class WebSocketTransport {
       guard
         let eventName = parseHandler.eventName,
         let eventType = OperationMessage.Types(rawValue: eventName) else {
+          print("PARSER ERROR 3")
           self.notifyErrorAllHandlers(WebSocketError(payload: parseHandler.eventData,
                                                      error: parseHandler.error,
                                                      kind: .unprocessedMessage(text)))
@@ -148,6 +149,7 @@ public class WebSocketTransport {
             responseHandler(.failure(websocketError))
           }
         } else {
+          print("PARSER ERROR 4")
           let websocketError = WebSocketError(payload: parseHandler.eventData,
                                               error: parseHandler.error,
                                               kind: .unprocessedMessage(text))
@@ -160,6 +162,7 @@ public class WebSocketTransport {
             subscribers.removeValue(forKey: id)
           }
         } else {
+          print("PARSER ERROR 5")
           notifyErrorAllHandlers(WebSocketError(payload: parseHandler.eventData,
                                                 error: parseHandler.error,
                                                 kind: .unprocessedMessage(text)))
@@ -181,6 +184,7 @@ public class WebSocketTransport {
            .unsubscribe,
            .connectionError,
            .pong:
+        print("PARSER ERROR 6")
         notifyErrorAllHandlers(WebSocketError(payload: parseHandler.eventData,
                                               error: parseHandler.error,
                                               kind: .unprocessedMessage(text)))
