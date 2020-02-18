@@ -10,12 +10,14 @@ public protocol WebSocketTransportDelegate: class {
   func webSocketTransportDidConnect(_ webSocketTransport: WebSocketTransport)
   func webSocketTransportDidReconnect(_ webSocketTransport: WebSocketTransport)
   func webSocketTransport(_ webSocketTransport: WebSocketTransport, didDisconnectWithError error:Error?)
+  func webSocketTransport(_ webSocketTransport: WebSocketTransport, shouldProcessMessage message: String) -> Bool
 }
 
 public extension WebSocketTransportDelegate {
   func webSocketTransportDidConnect(_ webSocketTransport: WebSocketTransport) {}
   func webSocketTransportDidReconnect(_ webSocketTransport: WebSocketTransport) {}
   func webSocketTransport(_ webSocketTransport: WebSocketTransport, didDisconnectWithError error:Error?) {}
+  func webSocketTransport(_ webSocketTransport: WebSocketTransport, shouldProcessMessage message: String) -> Bool { return true }
 }
 
 // MARK: - WebSocketTransport
@@ -168,6 +170,7 @@ public class WebSocketTransport {
 
   private func notifyErrorAllHandlers(_ error: Error) {
     for (_, handler) in subscribers {
+      print("notifyErrorAllHandlers: \(error)")
       handler(.failure(error))
     }
   }
@@ -273,6 +276,7 @@ public class WebSocketTransport {
 extension WebSocketTransport: NetworkTransport {
   public func send<Operation>(operation: Operation, completionHandler: @escaping (_ result: Result<GraphQLResponse<Operation>,Error>) -> Void) -> Cancellable {
     if let error = self.error.value {
+      print("WebSocketTransport Send Error: \(error)")
       completionHandler(.failure(error))
       return EmptyCancellable()
     }
@@ -283,6 +287,7 @@ extension WebSocketTransport: NetworkTransport {
         let response = GraphQLResponse(operation: operation, body: jsonBody)
         completionHandler(.success(response))
       case .failure(let error):
+        print("WebSocketTask Error: \(error)")
         completionHandler(.failure(error))
       }
     }
@@ -330,6 +335,9 @@ extension WebSocketTransport: WebSocketDelegate {
   }
 
   public func websocketDidReceiveMessage(socket: WebSocketClient, text: String) {
+    guard delegate?.webSocketTransport(self, shouldProcessMessage: text) ?? true else {
+      return
+    }
     processMessage(socket: socket, text: text)
   }
 
