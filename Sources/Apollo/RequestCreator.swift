@@ -29,7 +29,7 @@ public protocol RequestCreator {
                                                              manualBoundary: String?) throws -> MultipartFormData
 }
 
-extension RequestCreator {
+public extension RequestCreator {
   /// Creates a `GraphQLMap` out of the passed-in operation
   ///
   /// - Parameters:
@@ -38,10 +38,13 @@ extension RequestCreator {
   ///   - sendQueryDocument: Whether or not to send the full query document. Defaults to true.
   ///   - autoPersistQuery: Whether to use auto-persisted query information. Defaults to false.
   /// - Returns: The created `GraphQLMap`
-  public func requestBody<Operation: GraphQLOperation>(for operation: Operation,
+  func requestBody<Operation: GraphQLOperation>(for operation: Operation,
                                                        sendOperationIdentifiers: Bool = false,
                                                        sendQueryDocument: Bool = true,
                                                        autoPersistQuery: Bool = false) -> GraphQLMap {
+
+    print("DEFAULT requestBody called for: \(operation.operationType)")
+
     var body: GraphQLMap = [
       "variables": operation.variables,
       "operationName": operation.operationName,
@@ -91,11 +94,14 @@ extension RequestCreator {
   ///   - manualBoundary: [optional] A manual boundary to pass in. A default boundary will be used otherwise.
   /// - Returns: The created form data
   /// - Throws: Errors creating or loading the form  data
-  public func requestMultipartFormData<Operation: GraphQLOperation>(for operation: Operation,
+  func requestMultipartFormData<Operation: GraphQLOperation>(for operation: Operation,
                                                                     files: [GraphQLFile],
                                                                     sendOperationIdentifiers: Bool,
                                                                     serializationFormat: JSONSerializationFormat.Type,
                                                                     manualBoundary: String?) throws -> MultipartFormData {
+
+    print("DEFAULT requestMultipartFormData called for: \(operation.operationType)")
+
     let formData: MultipartFormData
 
     if let boundary = manualBoundary {
