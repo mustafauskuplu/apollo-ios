@@ -41,12 +41,15 @@ final class OperationMessage {
 
     var mutableEventData = eventData
 
-    if let variables = eventData?["variables"] as? JSONObject,
-      let input = variables["input"] as? JSONObject,
-      let clientSubscriptionId = input["clientSubscriptionId"] as? String {
-
-      print("ID ADDED")
-      mutableEventData?["id"] = clientSubscriptionId
+    if let variables = eventData?["variables"] as? GraphQLMap {
+      print("VARIABLES CAST SUCCESSFUL: \(variables)")
+      if let input = variables["input"] as? JSONObject {
+        print("INPUT CAST SUCCESSFUL: \(input)")
+        if let clientSubscriptionId = input["clientSubscriptionId"] as? String {
+          print("ID CAST SUCCESSFUL: \(clientSubscriptionId)")
+          mutableEventData?["id"] = clientSubscriptionId
+        }
+      }
     }
     if let id = id {
       message += ["id": id]
