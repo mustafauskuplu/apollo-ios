@@ -10,16 +10,12 @@ public protocol WebSocketTransportDelegate: class {
   func webSocketTransportDidConnect(_ webSocketTransport: WebSocketTransport)
   func webSocketTransportDidReconnect(_ webSocketTransport: WebSocketTransport)
   func webSocketTransport(_ webSocketTransport: WebSocketTransport, didDisconnectWithError error:Error?)
-  func webSocketTransport(_ webSocketTransport: WebSocketTransport, shouldProcessMessage message: String) -> Bool
-  func webSocketConnectionInitMessage(_ webSocketTransport: WebSocketTransport) -> String?
 }
 
 public extension WebSocketTransportDelegate {
   func webSocketTransportDidConnect(_ webSocketTransport: WebSocketTransport) {}
   func webSocketTransportDidReconnect(_ webSocketTransport: WebSocketTransport) {}
   func webSocketTransport(_ webSocketTransport: WebSocketTransport, didDisconnectWithError error:Error?) {}
-  func webSocketTransport(_ webSocketTransport: WebSocketTransport, shouldProcessMessage message: String) -> Bool { return true }
-  func webSocketConnectionInitMessage(_ webSocketTransport: WebSocketTransport) -> String? { return nil }
 }
 
 // MARK: - WebSocketTransport
@@ -41,6 +37,7 @@ public class WebSocketTransport {
 
   private var queue: [Int: String] = [:]
   private var connectingPayload: GraphQLMap?
+  private let token: String?
 
   private var subscribers = [String: (Result<JSONObject, Error>) -> Void]()
   private var subscriptions : [String: String] = [:]
@@ -50,6 +47,14 @@ public class WebSocketTransport {
   private let reconnectionInterval: TimeInterval
   fileprivate let sequenceNumberCounter = Atomic<Int>(0)
   fileprivate var reconnected = false
+
+  private static let heartbeatDateFormatter: DateFormatter = {
+      let dateFormatter = DateFormatter()
+      dateFormatter.dateFormat = "y-MM-dd H:m:ss.SSSS"
+      dateFormatter.timeZone = TimeZone(abbreviation: "UTC")
+      return dateFormatter
+  }()
+
 
   /// NOTE: Setting this won't override immediately if the socket is still connected, only on reconnection.
   public var clientName: String {
@@ -80,7 +85,8 @@ public class WebSocketTransport {
               sendOperationIdentifiers: Bool = false,
               reconnectionInterval: TimeInterval = 0.5,
               connectingPayload: GraphQLMap? = [:],
-              requestCreator: RequestCreator = ApolloRequestCreator()) {
+              requestCreator: RequestCreator = ApolloRequestCreator(),
+              token: String? = nil) {
     self.connectingPayload = connectingPayload
     self.sendOperationIdentifiers = sendOperationIdentifiers
     self.reconnectionInterval = reconnectionInterval
@@ -88,6 +94,7 @@ public class WebSocketTransport {
     self.websocket = WebSocketTransport.provider.init(request: request, protocols: protocols)
     self.clientName = clientName
     self.clientVersion = clientVersion
+    self.token = token
     self.addApolloClientHeaders(to: &self.websocket.request)
     self.websocket.delegate = self
     self.websocket.connect()
@@ -102,8 +109,14 @@ public class WebSocketTransport {
     return websocket.write(ping: data, completion: completionHandler)
   }
 
-  public func pong(data: Data, completionHandler: (() -> Void)? = nil) {
-    return websocket.write(pong: data, completion: completionHandler)
+  private func sendPong() {
+    let dateString = WebSocketTransport.heartbeatDateFormatter.string(from: Date())
+    let utcDate = WebSocketTransport.heartbeatDateFormatter.date(from: dateString)!
+    let currentTime = Int(utcDate.timeIntervalSince1970 * 1000)
+
+    if let pong = OperationMessage(eventData: ["time": currentTime], eventType: .pong, token: token).rawMessage {
+      write(pong)
+    }
   }
 
   private func processMessage(socket: WebSocketClient, text: String) {
@@ -119,7 +132,8 @@ public class WebSocketTransport {
 
       switch eventType {
       case .data,
-           .error:
+           .error,
+           .subscriptionUpdate:
         if
           let id = parseHandler.id,
           let responseHandler = subscribers[id] {
@@ -158,11 +172,15 @@ public class WebSocketTransport {
       case .connectionKeepAlive:
         writeQueue()
 
+      case .ping:
+        sendPong()
+
       case .connectionInit,
            .connectionTerminate,
            .subscribe,
            .unsubscribe,
-           .connectionError:
+           .connectionError,
+           .pong:
         notifyErrorAllHandlers(WebSocketError(payload: parseHandler.eventData,
                                               error: parseHandler.error,
                                               kind: .unprocessedMessage(text)))
@@ -197,9 +215,7 @@ public class WebSocketTransport {
     self.reconnect.value = reconnect
     self.acked = true
 
-    if let delegateMessage = delegate?.webSocketConnectionInitMessage(self) {
-      write(delegateMessage)
-    } else if let str = OperationMessage(eventData: self.connectingPayload, eventType: .connectionInit).rawMessage {
+    if let str = OperationMessage(eventData: self.connectingPayload ?? GraphQLMap(), eventType: .connectionInit, token: token).rawMessage {
       write(str)
     }
 
@@ -250,7 +266,7 @@ public class WebSocketTransport {
     print("Body created by request creator = \(body)")
     let sequenceNumber = "\(sequenceNumberCounter.increment())"
 
-    guard let message = OperationMessage(eventData: body, id: sequenceNumber).rawMessage else {
+    guard let message = OperationMessage(eventData: body, id: sequenceNumber, token: token).rawMessage else {
       return nil
     }
 
@@ -346,9 +362,6 @@ extension WebSocketTransport: WebSocketDelegate {
   }
 
   public func websocketDidReceiveMessage(socket: WebSocketClient, text: String) {
-    guard delegate?.webSocketTransport(self, shouldProcessMessage: text) ?? true else {
-      return
-    }
     processMessage(socket: socket, text: text)
   }
 

@@ -9,6 +9,7 @@ final class OperationMessage {
     case connectionTerminate = "connection_terminate"  // Client -> Server
     case subscribe = "subscribe"                       // Client -> Server
     case unsubscribe = "unsubscribe"                   // Client -> Server
+    case pong = "PONG"                                 // Client -> Server
 
     case connectionAck = "connection_ack"              // Server -> Client
     case connectionError = "connection_error"          // Server -> Client
@@ -16,6 +17,8 @@ final class OperationMessage {
     case data = "data"                                 // Server -> Client
     case error = "error"                               // Server -> Client
     case complete = "complete"                         // Server -> Client
+    case subscriptionUpdate = "subscription update"    // Server -> Client
+    case ping = "PING"                                 // Server -> Client
   }
 
   let serializationFormat = JSONSerializationFormat.self
