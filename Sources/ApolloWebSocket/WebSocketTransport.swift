@@ -202,6 +202,8 @@ public class WebSocketTransport {
     } else if let str = OperationMessage(payload: self.connectingPayload, type: .connectionInit).rawMessage {
       write(str)
     }
+
+    writeQueue()
   }
 
   public func closeConnection() {
