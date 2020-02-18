@@ -99,10 +99,10 @@ final class OperationMessage {
     do {
       let json = try JSONSerializationFormat.deserialize(data: data ) as? JSONObject
 
-      id = json?["id"] as? String
+      eventData = json?["eventData"] as? JSONObject
+      id = eventData?["id"] as? String
       token = json?["token"] as? String
       eventName = json?["eventName"] as? String
-      eventData = json?["eventData"] as? JSONObject
 
       handler(ParseHandler(id,
                            eventName,
