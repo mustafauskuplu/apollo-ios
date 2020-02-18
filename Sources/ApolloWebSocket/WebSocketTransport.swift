@@ -246,6 +246,7 @@ public class WebSocketTransport {
   func sendHelper<Operation: GraphQLOperation>(operation: Operation, resultHandler: @escaping (_ result: Result<JSONObject, Error>) -> Void) -> String? {
     print("WebSocketTransport.sendHelper is called")
     let body = requestCreator.requestBody(for: operation, sendOperationIdentifiers: self.sendOperationIdentifiers)
+    print("Request creator is default = \(requestCreator is ApolloRequestCreator)")
     print("Body created by request creator = \(body)")
     let sequenceNumber = "\(sequenceNumberCounter.increment())"
 
