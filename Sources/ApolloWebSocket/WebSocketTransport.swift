@@ -11,6 +11,7 @@ public protocol WebSocketTransportDelegate: class {
   func webSocketTransportDidReconnect(_ webSocketTransport: WebSocketTransport)
   func webSocketTransport(_ webSocketTransport: WebSocketTransport, didDisconnectWithError error:Error?)
   func webSocketTransport(_ webSocketTransport: WebSocketTransport, shouldProcessMessage message: String) -> Bool
+  func webSocketConnectionInitMessage(_ webSocketTransport: WebSocketTransport) -> String?
 }
 
 public extension WebSocketTransportDelegate {
@@ -18,6 +19,7 @@ public extension WebSocketTransportDelegate {
   func webSocketTransportDidReconnect(_ webSocketTransport: WebSocketTransport) {}
   func webSocketTransport(_ webSocketTransport: WebSocketTransport, didDisconnectWithError error:Error?) {}
   func webSocketTransport(_ webSocketTransport: WebSocketTransport, shouldProcessMessage message: String) -> Bool { return true }
+  func webSocketConnectionInitMessage(_ webSocketTransport: WebSocketTransport) -> String? { return nil }
 }
 
 // MARK: - WebSocketTransport
@@ -193,12 +195,13 @@ public class WebSocketTransport {
 
   public func initServer(reconnect: Bool = true) {
     self.reconnect.value = reconnect
-    self.acked = false
+    self.acked = true
 
-    if let str = OperationMessage(payload: self.connectingPayload, type: .connectionInit).rawMessage {
-      write(str, force:true)
+    if let delegateMessage = delegate?.webSocketConnectionInitMessage(self) {
+      write(delegateMessage)
+    } else if let str = OperationMessage(payload: self.connectingPayload, type: .connectionInit).rawMessage {
+      write(str)
     }
-
   }
 
   public func closeConnection() {
