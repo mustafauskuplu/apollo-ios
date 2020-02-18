@@ -42,9 +42,6 @@ public extension RequestCreator {
                                                        sendOperationIdentifiers: Bool = false,
                                                        sendQueryDocument: Bool = true,
                                                        autoPersistQuery: Bool = false) -> GraphQLMap {
-
-    print("DEFAULT requestBody called for: \(operation.operationType)")
-
     var body: GraphQLMap = [
       "variables": operation.variables,
       "operationName": operation.operationName,
