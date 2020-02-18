@@ -43,7 +43,7 @@ final class OperationMessage {
 
     if let variables = eventData?["variables"] as? GraphQLMap {
       print("VARIABLES CAST SUCCESSFUL: \(variables)")
-      if let input = variables["input"] as? JSONObject {
+      if let input = variables["input"] as? GraphQLMap {
         print("INPUT CAST SUCCESSFUL: \(input)")
         if let clientSubscriptionId = input["clientSubscriptionId"] as? String {
           print("ID CAST SUCCESSFUL: \(clientSubscriptionId)")
