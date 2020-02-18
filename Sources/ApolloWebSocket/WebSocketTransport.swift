@@ -239,12 +239,16 @@ public class WebSocketTransport {
   }
 
   func sendHelper<Operation: GraphQLOperation>(operation: Operation, resultHandler: @escaping (_ result: Result<JSONObject, Error>) -> Void) -> String? {
+    print("WebSocketTransport.sendHelper is called")
     let body = requestCreator.requestBody(for: operation, sendOperationIdentifiers: self.sendOperationIdentifiers)
+    print("Body created by request creator = \(body)")
     let sequenceNumber = "\(sequenceNumberCounter.increment())"
 
     guard let message = OperationMessage(payload: body, id: sequenceNumber).rawMessage else {
       return nil
     }
+
+    print("SendHelper created this message to write to the socket: \(message)")
 
     processingQueue.async {
       self.write(message)
@@ -275,6 +279,7 @@ public class WebSocketTransport {
 
 extension WebSocketTransport: NetworkTransport {
   public func send<Operation>(operation: Operation, completionHandler: @escaping (_ result: Result<GraphQLResponse<Operation>,Error>) -> Void) -> Cancellable {
+    print("WebSocketTransport.send called")
     if let error = self.error.value {
       print("WebSocketTransport Send Error: \(error)")
       completionHandler(.failure(error))
@@ -282,12 +287,12 @@ extension WebSocketTransport: NetworkTransport {
     }
 
     return WebSocketTask(self, operation) { result in
+      print("WebSocketTask Result: \(result)")
       switch result {
       case .success(let jsonBody):
         let response = GraphQLResponse(operation: operation, body: jsonBody)
         completionHandler(.success(response))
       case .failure(let error):
-        print("WebSocketTask Error: \(error)")
         completionHandler(.failure(error))
       }
     }

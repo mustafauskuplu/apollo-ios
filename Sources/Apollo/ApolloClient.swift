@@ -67,6 +67,7 @@ public class ApolloClient {
                                                      shouldPublishResultToStore: Bool,
                                                      context: UnsafeMutableRawPointer?,
                                                      resultHandler: @escaping GraphQLResultHandler<Operation.Data>) -> Cancellable {
+    print("ApolloClient.send called")
     return networkTransport.send(operation: operation) { [weak self] result in
       guard let self = self else {
         return
@@ -82,6 +83,7 @@ public class ApolloClient {
                                                 context: UnsafeMutableRawPointer?,
                                                 _ result: Result<GraphQLResponse<Operation>, Error>,
                                                 resultHandler: @escaping GraphQLResultHandler<Operation.Data>) {
+    print("ApolloClient.handleOperationResult called")
     switch result {
     case .failure(let error):
       resultHandler(.failure(error))
@@ -201,6 +203,9 @@ extension ApolloClient: ApolloClientProtocol {
   public func subscribe<Subscription: GraphQLSubscription>(subscription: Subscription,
                                                            queue: DispatchQueue = .main,
                                                            resultHandler: @escaping GraphQLResultHandler<Subscription.Data>) -> Cancellable {
+
+    print("ApolloClient.subscribe called")
+
     return self.send(operation: subscription,
                      shouldPublishResultToStore: true,
                      context: nil,
