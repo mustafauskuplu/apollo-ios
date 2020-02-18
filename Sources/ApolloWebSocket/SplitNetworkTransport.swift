@@ -43,7 +43,7 @@ public class SplitNetworkTransport {
 extension SplitNetworkTransport: NetworkTransport {
 
   public func send<Operation>(operation: Operation, completionHandler: @escaping (Result<GraphQLResponse<Operation>, Error>) -> Void) -> Cancellable {
-    print("SplitNetworkTransport.send called")
+    print("SplitNetworkTransport.send called for: \(operation.operationName), TYPE: \(operation.operationType)")
     if operation.operationType == .subscription {
       return webSocketNetworkTransport.send(operation: operation, completionHandler: completionHandler)
     } else {
