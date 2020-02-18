@@ -56,7 +56,7 @@ public extension RequestCreator {
     }
 
     if sendQueryDocument {
-      body["query"] = operation.queryDocument
+      body["query"] = operation.queryDocument.replacingOccurrences(of: "\n", with: "")
     }
 
     if autoPersistQuery {
