@@ -39,14 +39,23 @@ final class OperationMessage {
        eventType: Types = .subscribe,
        token: String? = nil) {
 
-    if let eventData = eventData {
+    var mutableEventData = eventData
+
+    if let variables = eventData?["variables"] as? JSONObject,
+      let input = variables["input"] as? JSONObject,
+      let clientSubscriptionId = input["clientSubscriptionId"] as? String {
+
+      print("ID ADDED")
+      mutableEventData?["id"] = clientSubscriptionId
+    }
+    if let id = id {
+      message += ["id": id]
+    }
+    if let eventData = mutableEventData {
       message += ["eventData": eventData]
     }
     if let token = token {
       message += ["token": token]
-    }
-    if let id = id {
-      message += ["id": id]
     }
     message += ["eventName": eventType.rawValue]
   }
