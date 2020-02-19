@@ -109,13 +109,15 @@ public class WebSocketTransport {
     return websocket.write(ping: data, completion: completionHandler)
   }
 
-  private func sendPong() {
+  private func pingPong(for requestType: OperationMessage.Types) {
+    guard [.ping, .pong].contains(requestType) else { return }
     let dateString = WebSocketTransport.heartbeatDateFormatter.string(from: Date())
     let utcDate = WebSocketTransport.heartbeatDateFormatter.date(from: dateString)!
     let currentTime = Int(utcDate.timeIntervalSince1970 * 1000)
+    let responseType: OperationMessage.Types = requestType == .ping ? .pong : .ping
 
-    if let pong = OperationMessage(eventData: ["time": currentTime], eventType: .pong, token: token).rawMessage {
-      write(pong)
+    if let response = OperationMessage(eventData: ["time": currentTime], eventType: responseType, token: token).rawMessage {
+      write(response)
     }
   }
 
@@ -175,15 +177,15 @@ public class WebSocketTransport {
       case .connectionKeepAlive:
         writeQueue()
 
-      case .ping:
-        sendPong()
+      case .ping,
+           .pong:
+        pingPong(for: eventType)
 
       case .connectionInit,
            .connectionTerminate,
            .subscribe,
            .unsubscribe,
-           .connectionError,
-           .pong:
+           .connectionError:
         print("PARSER ERROR 6")
         notifyErrorAllHandlers(WebSocketError(payload: parseHandler.eventData,
                                               error: parseHandler.error,
@@ -289,7 +291,7 @@ public class WebSocketTransport {
   }
 
   public func unsubscribe(_ subscriptionId: String) {
-    let str = OperationMessage(id: subscriptionId, eventType: .unsubscribe).rawMessage
+    let str = OperationMessage(id: subscriptionId, eventType: .unsubscribe, token: token).rawMessage
 
     processingQueue.async {
       if let str = str {
