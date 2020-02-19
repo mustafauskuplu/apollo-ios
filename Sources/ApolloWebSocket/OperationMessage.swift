@@ -81,7 +81,6 @@ final class OperationMessage {
     }
 
     guard let data = self.serialized?.data(using: (.utf8) ) else {
-      print("PARSER ERROR 1")
       handler(ParseHandler(nil,
                            nil,
                            nil,
@@ -112,7 +111,6 @@ final class OperationMessage {
                            nil))
     }
     catch {
-      print("PARSER ERROR 2")
       handler(ParseHandler(id,
                            eventName,
                            token,

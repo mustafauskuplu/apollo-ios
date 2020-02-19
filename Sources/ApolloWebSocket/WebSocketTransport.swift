@@ -126,7 +126,6 @@ public class WebSocketTransport {
       guard
         let eventName = parseHandler.eventName,
         let eventType = OperationMessage.Types(rawValue: eventName) else {
-          print("PARSER ERROR 3")
           self.notifyErrorAllHandlers(WebSocketError(payload: parseHandler.eventData,
                                                      error: parseHandler.error,
                                                      kind: .unprocessedMessage(text)))
@@ -151,7 +150,6 @@ public class WebSocketTransport {
             responseHandler(.failure(websocketError))
           }
         } else {
-          print("PARSER ERROR 4")
           let websocketError = WebSocketError(payload: parseHandler.eventData,
                                               error: parseHandler.error,
                                               kind: .unprocessedMessage(text))
@@ -164,7 +162,6 @@ public class WebSocketTransport {
             subscribers.removeValue(forKey: id)
           }
         } else {
-          print("PARSER ERROR 5")
           notifyErrorAllHandlers(WebSocketError(payload: parseHandler.eventData,
                                                 error: parseHandler.error,
                                                 kind: .unprocessedMessage(text)))
@@ -186,7 +183,6 @@ public class WebSocketTransport {
            .subscribe,
            .unsubscribe,
            .connectionError:
-        print("PARSER ERROR 6")
         notifyErrorAllHandlers(WebSocketError(payload: parseHandler.eventData,
                                               error: parseHandler.error,
                                               kind: .unprocessedMessage(text)))
@@ -196,7 +192,6 @@ public class WebSocketTransport {
 
   private func notifyErrorAllHandlers(_ error: Error) {
     for (_, handler) in subscribers {
-      print("notifyErrorAllHandlers: \(error)")
       handler(.failure(error))
     }
   }
@@ -266,17 +261,12 @@ public class WebSocketTransport {
   }
 
   func sendHelper<Operation: GraphQLOperation>(operation: Operation, resultHandler: @escaping (_ result: Result<JSONObject, Error>) -> Void) -> String? {
-    print("WebSocketTransport.sendHelper is called")
     let body = requestCreator.requestBody(for: operation, sendOperationIdentifiers: self.sendOperationIdentifiers)
-    print("Request creator is default = \(requestCreator is ApolloRequestCreator)")
-    print("Body created by request creator = \(body)")
     let sequenceNumber = "\(sequenceNumberCounter.increment())"
 
     guard let message = OperationMessage(eventData: body, id: sequenceNumber, token: token).rawMessage else {
       return nil
     }
-
-    print("SendHelper created this message to write to the socket: \(message)")
 
     processingQueue.async {
       self.write(message)
@@ -307,15 +297,12 @@ public class WebSocketTransport {
 
 extension WebSocketTransport: NetworkTransport {
   public func send<Operation>(operation: Operation, completionHandler: @escaping (_ result: Result<GraphQLResponse<Operation>,Error>) -> Void) -> Cancellable {
-    print("WebSocketTransport.send called")
     if let error = self.error.value {
-      print("WebSocketTransport Send Error: \(error)")
       completionHandler(.failure(error))
       return EmptyCancellable()
     }
 
     return WebSocketTask(self, operation) { result in
-      print("WebSocketTask Result: \(result)")
       switch result {
       case .success(let jsonBody):
         let response = GraphQLResponse(operation: operation, body: jsonBody)
